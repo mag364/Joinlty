@@ -13,6 +13,7 @@ import { registerRecurringIpc } from './recurringIpc'
 import { registerReportsIpc } from './reportsIpc'
 import { registerSettingsIpc } from './settingsIpc'
 import { registerTransactionsIpc } from './transactionsIpc'
+import { registerUpdatesIpc } from './updatesIpc'
 import { getRegisteredChannelCount } from './guard'
 
 export const registerIpcHandlers = () => {
@@ -31,6 +32,7 @@ export const registerIpcHandlers = () => {
   registerSettingsIpc()
   registerBudgetIpc()
   registerAiIpc()
+  registerUpdatesIpc()
 
   if (process.env.NODE_ENV !== 'production') {
     console.debug(`[ipc] registered channels: ${getRegisteredChannelCount()}`)

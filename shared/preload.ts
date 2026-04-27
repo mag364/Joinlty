@@ -18,6 +18,22 @@ export interface AppInfo {
   storageDir: string
 }
 
+export interface UpdateStatus {
+  checking: boolean
+  updateAvailable: boolean
+  updateDownloaded: boolean
+  currentVersion: string
+  message: string
+  downloadProgress?: number | null
+  error?: string | null
+  updateInfo?: {
+    version: string
+    releaseDate?: string | null
+    releaseName?: string | null
+    releaseNotes?: string | null
+  } | null
+}
+
 export interface ReportsSummary {
   month: string
   income: number
@@ -283,6 +299,10 @@ export interface FullDataImportResult {
 export interface CoupleBudgetApi {
   getAppInfo: () => Promise<AppInfo>
   pickFile: () => Promise<string | null>
+  getUpdateStatus: () => Promise<UpdateStatus>
+  checkForUpdates: () => Promise<UpdateStatus>
+  downloadUpdate: () => Promise<UpdateStatus>
+  installUpdate: () => Promise<UpdateStatus>
   minimizeWindow: () => Promise<void>
   maximizeWindow: () => Promise<void>
   closeWindow: () => Promise<void>

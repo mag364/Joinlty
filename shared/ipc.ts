@@ -1,6 +1,10 @@
 export const IPC_CHANNELS = {
   appGetInfo: 'app:getInfo',
   appPickFile: 'app:pickFile',
+  updatesGetStatus: 'updates:getStatus',
+  updatesCheck: 'updates:check',
+  updatesDownload: 'updates:download',
+  updatesInstall: 'updates:install',
   windowMinimize: 'window:minimize',
   windowMaximize: 'window:maximize',
   windowClose: 'window:close',

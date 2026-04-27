@@ -5,6 +5,7 @@ import { getDb } from './dbService'
 import { registerIpcHandlers } from './ipc/index'
 import { settingsService } from './services/settingsService'
 import { generationService } from './services/generationService'
+import { updateService } from './services/updateService'
 import { createMainWindow, initWindowManager, setDeveloperModeEnabled } from './windowManager'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -26,6 +27,8 @@ app.whenReady().then(() => {
     distHtmlPath: join(__dirname, '../dist/index.html'),
     iconPath: join(__dirname, '../build/icon.ico'),
   })
+
+  updateService.init()
 
   const loadedSettings = settingsService.getAll()
   const developerModeEnabled = loadedSettings.developer_mode !== '0'

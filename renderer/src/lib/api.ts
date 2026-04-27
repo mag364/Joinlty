@@ -1,4 +1,4 @@
-import type { CoupleBudgetApi, FullDataBackupPayload, FullDataImportResult } from '@shared/preload'
+import type { CoupleBudgetApi, FullDataBackupPayload, FullDataImportResult, UpdateStatus } from '@shared/preload'
 
 export const isElectronRuntime = typeof window !== 'undefined' && typeof window.coupleBudget !== 'undefined'
 
@@ -8,6 +8,16 @@ const appInfoFallback = async () => ({
   storageDir: 'Unavailable (open app via Electron)',
 })
 const pickFileFallback = async () => null
+const updateStatusFallback = async (): Promise<UpdateStatus> => ({
+  checking: false,
+  updateAvailable: false,
+  updateDownloaded: false,
+  currentVersion: 'dev-browser',
+  message: 'Update checks are only available in the installed desktop app.',
+  downloadProgress: null,
+  error: null,
+  updateInfo: null,
+})
 
 const membersFallback = async () => []
 const jointsFallback = async () => []
@@ -139,6 +149,10 @@ const debugDbIntegrityCheckFallback = async () => ({
 const fallbackApi: CoupleBudgetApi = {
   getAppInfo: appInfoFallback,
   pickFile: pickFileFallback,
+  getUpdateStatus: updateStatusFallback,
+  checkForUpdates: updateStatusFallback,
+  downloadUpdate: updateStatusFallback,
+  installUpdate: updateStatusFallback,
   minimizeWindow: windowControlFallback,
   maximizeWindow: windowControlFallback,
   closeWindow: windowControlFallback,

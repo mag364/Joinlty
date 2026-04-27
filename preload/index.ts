@@ -5,6 +5,10 @@ import type { CoupleBudgetApi } from '../shared/preload'
 const api: CoupleBudgetApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC_CHANNELS.appGetInfo),
   pickFile: () => ipcRenderer.invoke(IPC_CHANNELS.appPickFile),
+  getUpdateStatus: () => ipcRenderer.invoke(IPC_CHANNELS.updatesGetStatus),
+  checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.updatesCheck),
+  downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.updatesDownload),
+  installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.updatesInstall),
   minimizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.windowMinimize),
   maximizeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.windowMaximize),
   closeWindow: () => ipcRenderer.invoke(IPC_CHANNELS.windowClose),

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, Download, ShieldAlert, Upload } from 'lucide-react'
+import { Copy, Download, RefreshCw, ShieldAlert, Upload } from 'lucide-react'
 import { useAppStore } from '@renderer/store/useAppStore'
 import { api } from '@renderer/lib/api'
 import type { Category } from '@shared/types'
@@ -9,6 +9,7 @@ import type {
   DebugDbIntegrityCheckResult,
   DebugEnumInventory,
   FullDataBackupPayload,
+  UpdateStatus,
 } from '@shared/preload'
 import { getAvailableTimeZones, getLocalTodayDate } from '@renderer/lib/dates'
 import { mapCsvRowToTransaction, normalizeHeader, parseCsvRows } from '@renderer/lib/csv'
@@ -59,6 +60,8 @@ export const SettingsManager = () => {
   const [copiedField, setCopiedField] = useState<'storage' | 'db' | null>(null)
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
   const [clearConfirmText, setClearConfirmText] = useState('')
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
+  const [updateAction, setUpdateAction] = useState<'checking' | 'downloading' | 'installing' | null>(null)
   const aiModelRequestIdRef = useRef(0)
 
   const availableTimeZones = useMemo(() => {
@@ -97,10 +100,26 @@ export const SettingsManager = () => {
     setCategories(result)
   }
 
+  const refreshUpdateStatus = async () => {
+    const result = await api.getUpdateStatus()
+    setUpdateStatus(result)
+  }
+
   useEffect(() => {
     void loadSettings()
     void loadCategories()
+    void refreshUpdateStatus()
   }, [])
+
+  useEffect(() => {
+    if (!updateStatus?.checking && !updateStatus?.downloadProgress) return
+
+    const interval = window.setInterval(() => {
+      void refreshUpdateStatus()
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [updateStatus?.checking, updateStatus?.downloadProgress])
 
   const exportMemberAccounts = useMemo(
     () =>
@@ -487,6 +506,36 @@ export const SettingsManager = () => {
     }
   }
 
+  const checkForUpdates = async () => {
+    setUpdateAction('checking')
+    try {
+      const result = await api.checkForUpdates()
+      setUpdateStatus(result)
+    } finally {
+      setUpdateAction(null)
+    }
+  }
+
+  const downloadUpdate = async () => {
+    setUpdateAction('downloading')
+    try {
+      const result = await api.downloadUpdate()
+      setUpdateStatus(result)
+    } finally {
+      setUpdateAction(null)
+    }
+  }
+
+  const installUpdate = async () => {
+    setUpdateAction('installing')
+    try {
+      const result = await api.installUpdate()
+      setUpdateStatus(result)
+    } finally {
+      setUpdateAction(null)
+    }
+  }
+
   const runEnumInventory = async () => {
     setRunningEnumInventory(true)
     setEnumInventoryError('')
@@ -627,6 +676,62 @@ export const SettingsManager = () => {
             <div className="space-y-1 px-5 pb-5 text-xs text-slate-600">
               <p>System timezone: <span className="font-semibold">{systemTimeZone || 'Unknown'}</span></p>
               <p>Selected timezone preview: <span className="font-semibold">{selectedTimeZoneNow}</span></p>
+            </div>
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Application Updates"
+              subtitle="Check for, download, and install packaged app updates."
+              actions={<RefreshCw className="h-4 w-4 text-slate-500" />}
+            />
+            <div className="space-y-4 p-5 text-sm">
+              <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <p>Current version: <span className="font-semibold">{updateStatus?.currentVersion ?? appInfo?.appVersion ?? 'Loading...'}</span></p>
+                {updateStatus?.updateInfo?.version && (
+                  <p className="mt-1">Available version: <span className="font-semibold">{updateStatus.updateInfo.version}</span></p>
+                )}
+              </div>
+
+              <p className={`rounded px-3 py-2 text-sm ${updateStatus?.error ? 'border border-red-200 bg-red-50 text-red-700' : 'border border-slate-200 bg-white text-slate-700'}`}>
+                {updateStatus?.message ?? 'Loading update status...'}
+              </p>
+
+              {typeof updateStatus?.downloadProgress === 'number' && (
+                <div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${Math.max(0, Math.min(100, updateStatus.downloadProgress))}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Download progress: {updateStatus.downloadProgress}%</p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void checkForUpdates()}
+                  disabled={updateAction !== null || updateStatus?.checking}
+                  className="rounded border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {updateAction === 'checking' || updateStatus?.checking ? 'Checking...' : 'Check for Updates'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void downloadUpdate()}
+                  disabled={updateAction !== null || !updateStatus?.updateAvailable || updateStatus.updateDownloaded}
+                  className="rounded border border-slate-300 px-3 py-2 text-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {updateAction === 'downloading' ? 'Downloading...' : 'Download Update'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void installUpdate()}
+                  disabled={updateAction !== null || !updateStatus?.updateDownloaded}
+                  className="rounded bg-slate-900 px-3 py-2 text-sm text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {updateAction === 'installing' ? 'Restarting...' : 'Restart & Install'}
+                </button>
+              </div>
             </div>
           </Card>
 
