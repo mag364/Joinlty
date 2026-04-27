@@ -6,6 +6,7 @@ import type { UpdateStatus } from '../../shared/preload'
 const githubOwner = 'mag364'
 const githubRepo = 'Joinlty'
 const githubRepoUrl = `https://github.com/${githubOwner}/${githubRepo}`
+const githubRepoApiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}`
 const githubLatestReleaseApiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/releases/latest`
 
 let status: UpdateStatus = {
@@ -66,13 +67,23 @@ const checkGithubLatestRelease = async (): Promise<UpdateStatus> => {
     })
 
     if (response.status === 404) {
+      const repoResponse = await fetch(githubRepoApiUrl, {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': `Jointly/${app.getVersion()}`,
+        },
+      })
+
+      const repoIsReachable = repoResponse.ok
       setStatus({
         checking: false,
         updateAvailable: false,
         updateDownloaded: false,
         updateInfo: null,
-        error: 'No published GitHub release was found for this repository.',
-        message: `No releases found at ${githubRepoUrl}. Publish a release with an installer asset before update checks can find it.`,
+        error: null,
+        message: repoIsReachable
+          ? `No published releases found at ${githubRepoUrl}. Publish a GitHub Release with installer assets before update checks can find an update.`
+          : `GitHub could not find ${githubRepoUrl}. Confirm the repository exists and is public, or authenticate release access.`,
       })
       return status
     }
@@ -192,11 +203,21 @@ export const updateService = {
   },
 
   async checkForUpdates(): Promise<UpdateStatus> {
-    if (!app.isPackaged) {
-      return checkGithubLatestRelease()
+    const githubStatus = await checkGithubLatestRelease()
+
+    if (!githubStatus.updateAvailable) {
+      return githubStatus
     }
 
-    setStatus({ checking: true, error: null, message: 'Checking for updates...' })
+    if (!app.isPackaged) {
+      setStatus({
+        ...githubStatus,
+        message: `${githubStatus.message} Install a packaged release to download and apply updates automatically.`,
+      })
+      return status
+    }
+
+    setStatus({ checking: true, error: null, message: `Checking packaged update metadata from ${githubRepoUrl}...` })
     try {
       const result: UpdateCheckResult | null = await autoUpdater.checkForUpdates()
       if (!result?.updateInfo) {
