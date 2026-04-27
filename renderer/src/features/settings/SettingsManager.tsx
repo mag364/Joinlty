@@ -511,6 +511,16 @@ export const SettingsManager = () => {
     try {
       const result = await api.checkForUpdates()
       setUpdateStatus(result)
+    } catch (error) {
+      setUpdateStatus((current) => ({
+        checking: false,
+        updateAvailable: current?.updateAvailable ?? false,
+        updateDownloaded: current?.updateDownloaded ?? false,
+        currentVersion: current?.currentVersion ?? appInfo?.appVersion ?? 'unknown',
+        updateInfo: current?.updateInfo ?? null,
+        error: error instanceof Error ? error.message : 'Failed to check for updates',
+        message: 'Update check failed.',
+      }))
     } finally {
       setUpdateAction(null)
     }
@@ -521,6 +531,16 @@ export const SettingsManager = () => {
     try {
       const result = await api.downloadUpdate()
       setUpdateStatus(result)
+    } catch (error) {
+      setUpdateStatus((current) => ({
+        checking: false,
+        updateAvailable: current?.updateAvailable ?? false,
+        updateDownloaded: current?.updateDownloaded ?? false,
+        currentVersion: current?.currentVersion ?? appInfo?.appVersion ?? 'unknown',
+        updateInfo: current?.updateInfo ?? null,
+        error: error instanceof Error ? error.message : 'Failed to download update',
+        message: 'Update download failed.',
+      }))
     } finally {
       setUpdateAction(null)
     }
@@ -531,6 +551,16 @@ export const SettingsManager = () => {
     try {
       const result = await api.installUpdate()
       setUpdateStatus(result)
+    } catch (error) {
+      setUpdateStatus((current) => ({
+        checking: false,
+        updateAvailable: current?.updateAvailable ?? false,
+        updateDownloaded: current?.updateDownloaded ?? false,
+        currentVersion: current?.currentVersion ?? appInfo?.appVersion ?? 'unknown',
+        updateInfo: current?.updateInfo ?? null,
+        error: error instanceof Error ? error.message : 'Failed to install update',
+        message: 'Update install failed.',
+      }))
     } finally {
       setUpdateAction(null)
     }
