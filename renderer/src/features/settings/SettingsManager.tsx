@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, Download, RefreshCw, ShieldAlert, Upload } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { ChevronDown, Copy, Download, RefreshCw, ShieldAlert, Upload } from 'lucide-react'
 import { useAppStore } from '@renderer/store/useAppStore'
 import { api } from '@renderer/lib/api'
 import type { Category } from '@shared/types'
@@ -62,6 +62,10 @@ export const SettingsManager = () => {
   const [clearConfirmText, setClearConfirmText] = useState('')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const [updateAction, setUpdateAction] = useState<'checking' | 'downloading' | 'installing' | null>(null)
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+    appStorage: true,
+    updates: true,
+  })
   const aiModelRequestIdRef = useRef(0)
 
   const availableTimeZones = useMemo(() => {
@@ -634,6 +638,47 @@ export const SettingsManager = () => {
     }
   }
 
+  const toggleSettingsCard = (id: string) => {
+    setExpandedCards((current) => ({ ...current, [id]: !(current[id] ?? false) }))
+  }
+
+  const CollapsibleSettingsCard = ({
+    id,
+    title,
+    subtitle,
+    actions,
+    children,
+  }: {
+    id: string
+    title: string
+    subtitle?: string
+    actions?: ReactNode
+    children: ReactNode
+  }) => {
+    const expanded = expandedCards[id] ?? false
+
+    return (
+      <Card>
+        <button
+          type="button"
+          onClick={() => toggleSettingsCard(id)}
+          aria-expanded={expanded}
+          className={`flex w-full items-start justify-between gap-3 px-5 py-4 text-left transition hover:bg-slate-50 ${expanded ? 'border-b border-slate-100' : ''}`}
+        >
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">{title}</h2>
+            {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+          </div>
+          <span className="flex items-center gap-2">
+            {actions}
+            <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+        {expanded && children}
+      </Card>
+    )
+  }
+
   return (
     <section className="space-y-6">
       <div>
@@ -643,8 +688,7 @@ export const SettingsManager = () => {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="space-y-6">
-          <Card>
-            <SectionHeader title="App & Storage" subtitle="Application metadata and local storage paths." />
+          <CollapsibleSettingsCard id="appStorage" title="App & Storage" subtitle="Application metadata and local storage paths.">
             <div className="space-y-4 p-5 text-sm">
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500">App Version</p>
@@ -686,10 +730,9 @@ export const SettingsManager = () => {
                 {copiedField === 'db' && <p className="mt-1 text-xs text-emerald-700">Copied</p>}
               </div>
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
 
-          <Card>
-            <SectionHeader title="Timezone" subtitle="Set the app timezone used for date-sensitive workflows." />
+          <CollapsibleSettingsCard id="timezone" title="Timezone" subtitle="Set the app timezone used for date-sensitive workflows.">
             <div className="grid gap-3 p-5 md:grid-cols-4">
               <label className="text-xs text-slate-600 md:col-span-3">
                 Timezone
@@ -707,14 +750,14 @@ export const SettingsManager = () => {
               <p>System timezone: <span className="font-semibold">{systemTimeZone || 'Unknown'}</span></p>
               <p>Selected timezone preview: <span className="font-semibold">{selectedTimeZoneNow}</span></p>
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
 
-          <Card>
-            <SectionHeader
+          <CollapsibleSettingsCard
+            id="updates"
               title="Application Updates"
               subtitle="Check for, download, and install packaged app updates."
               actions={<RefreshCw className="h-4 w-4 text-slate-500" />}
-            />
+          >
             <div className="space-y-4 p-5 text-sm">
               <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
                 <p>Current version: <span className="font-semibold">{updateStatus?.currentVersion ?? appInfo?.appVersion ?? 'Loading...'}</span></p>
@@ -763,10 +806,9 @@ export const SettingsManager = () => {
                 </button>
               </div>
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
 
-          <Card>
-            <SectionHeader title="Categories" subtitle="Manage normalized categories used across transactions and reports." />
+          <CollapsibleSettingsCard id="categories" title="Categories" subtitle="Manage normalized categories used across transactions and reports.">
             <div className="grid gap-3 p-5 md:grid-cols-4">
               <label className="text-xs text-slate-600">
                 Category
@@ -812,12 +854,11 @@ export const SettingsManager = () => {
                 {selectedCategorySource === 'managed' && pendingCategoryDeleteId === selectedCategoryId ? 'Confirm remove' : 'Remove'}
               </button>
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <SectionHeader title="Import / Export" subtitle="Move data in and out of Jointly safely." />
+          <CollapsibleSettingsCard id="importExport" title="Import / Export" subtitle="Move data in and out of Jointly safely.">
             <div className="space-y-5 p-5 text-sm">
               <section className="space-y-2">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -943,10 +984,9 @@ export const SettingsManager = () => {
               {importStatus && <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{importStatus}</p>}
               {fullTransferStatus && <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{fullTransferStatus}</p>}
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
 
-          <Card>
-            <SectionHeader title="AI Provider" subtitle="Configure your local AI endpoint and model." />
+          <CollapsibleSettingsCard id="aiProvider" title="AI Provider" subtitle="Configure your local AI endpoint and model.">
             <div className="space-y-3 p-5 text-sm">
               <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
                 Select an AI Provider to enable AI-assisted suggestions and checks. Recommended model: <span className="font-semibold">qwen2.5-7b</span>.
@@ -1009,12 +1049,11 @@ export const SettingsManager = () => {
               <p className="text-xs text-slate-600">Active AI config: <span className="font-semibold">{activeProviderLabel}</span> / <span className="font-semibold">{activeModelLabel}</span></p>
               {aiResult && <p className={`rounded px-3 py-2 text-sm ${aiResult.ok ? 'border border-emerald-200 bg-emerald-50 text-emerald-700' : 'border border-amber-200 bg-amber-50 text-amber-700'}`}>{aiResult.message}</p>}
             </div>
-          </Card>
+          </CollapsibleSettingsCard>
         </div>
       </div>
 
-      <Card>
-        <SectionHeader title="Danger Zone" subtitle="Clear all budget data and start fresh." />
+      <CollapsibleSettingsCard id="dangerZone" title="Danger Zone" subtitle="Clear all budget data and start fresh.">
         <div className="space-y-3 p-5">
           <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             This will remove members, accounts, transactions, recurring rules, budgets, and settings.
@@ -1033,19 +1072,19 @@ export const SettingsManager = () => {
           </button>
           {clearAllDataStatus && <p className="text-xs text-red-700">{clearAllDataStatus}</p>}
         </div>
-      </Card>
+      </CollapsibleSettingsCard>
 
-      <Card>
-        <SectionHeader
+      <CollapsibleSettingsCard
+        id="developer"
           title="Developer"
           subtitle="Toggle Chrome menu bar/framed mode and run diagnostics."
           actions={
-            <label className="flex items-center gap-2 rounded border border-slate-300 px-3 py-2 text-xs">
+            <label className="flex items-center gap-2 rounded border border-slate-300 px-3 py-2 text-xs" onClick={(event) => event.stopPropagation()}>
               <input type="checkbox" checked={developerModeEnabled} onChange={(event) => void toggleDeveloperMode(event.target.checked)} disabled={updatingDeveloperMode} />
               Developer Mode
             </label>
           }
-        />
+      >
         <div className="space-y-3 p-5">
           <p className="text-xs text-slate-600">
             {developerModeEnabled
@@ -1077,7 +1116,7 @@ export const SettingsManager = () => {
             </>
           )}
         </div>
-      </Card>
+      </CollapsibleSettingsCard>
 
       {clearConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
