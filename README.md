@@ -119,12 +119,12 @@ npm run build
 
 In packaged apps, data is stored under the OS appData directory in:
 
-- `{appData}/CoupleBudget/couplebudget.sqlite`
-- `{appData}/CoupleBudget/storage/...`
+- `{appData}/Jointly/jointly.sqlite`
+- `{appData}/Jointly/storage/...`
 
 In local development, appData is redirected to:
 
-- `./.appdata/CoupleBudget/...`
+- `./.appdata/Jointly/...`
 
 to keep all data inside the project workspace.
 
